@@ -1,22 +1,27 @@
 "Parser for LLVM IR in human readable form (.ll) files."
 
-import pyparsing as pp
+from pyparsing import (
+    MatchFirst,
+    Regex,
+    restOfLine,
+    ZeroOrMore,
+)
 
 def _prepare_parser():
-    number = pp.Regex(r'-?\d+')
-    local = pp.Regex(r'%[A-Za-z0-9._]+')
-    glob = pp.Regex(r'@[A-Za-z0-9._]+')
+    number = Regex(r'-?\d+')
+    local = Regex(r'%[A-Za-z0-9._]+')
+    glob = Regex(r'@[A-Za-z0-9._]+')
 
-    keywords = lambda keywords: pp.MatchFirst(word for word in keywords.split())
+    keywords = lambda keywords: MatchFirst(word for word in keywords.split())
 
     label = local + ':'
 
-    unused_def = keywords('target declare attributes !') + pp.restOfLine
+    unused_def = keywords('target declare attributes !') + restOfLine
 
     definition = unused_def
-    llvm = pp.ZeroOrMore(definition)
+    llvm = ZeroOrMore(definition)
 
-    comment = ';' + pp.restOfLine
+    comment = ';' + restOfLine
     llvm.ignore(comment)
 
     return llvm
