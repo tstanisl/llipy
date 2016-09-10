@@ -19,6 +19,7 @@ def _prepare_parser():
     meta = Regex(r'![A-Za-z0-9._]+')
 
     keywords = lambda keywords: MatchFirst(Keyword(word) for word in keywords.split())
+    seplist = lambda entry: delimitedList(entry) | Empty()
 
     label = local + ':'
 
@@ -27,17 +28,24 @@ def _prepare_parser():
     type_ = Forward()
     void = Keyword('void')
     scalar_type = keywords('i1 i8 i16 i32 i64') | void
-    types_list = delimitedList(type_) | Empty()
+    types_list = seplist(type_)
     struct_type = '{' + types_list - '}'
-    type_ << (scalar_type | local | struct_type)
+    array_type = '[' - number - 'x' - type_ - ']'
+    type_ << (scalar_type | local | struct_type | array_type)
 
     type_def = local + '=' + Keyword('type') - struct_type
 
-    value = number | keywords('zeroinitializer null true false')
+    value = Forward()
+    typed_value = type_ + value
+    value_list = seplist(typed_value)
+    compound_value = '{' + value_list - '}'
+    array_value = '[' + value_list - ']'
+    kw_value = keywords('zeroinitializer null true false')
+    value << (number | kw_value | compound_value | array_value)
 
     linkage = Optional(keywords('private external internal common'), 'external')
     align = Optional(',' + Keyword('align') - number)
-    metas = delimitedList(meta + meta) | Empty()
+    metas = seplist(meta + meta)
     global_tag = keywords('global constant')
     initializer = Optional(value, default='undef')
     global_def = glob - '=' - linkage - global_tag - type_ - initializer - align - metas
