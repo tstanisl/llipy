@@ -6,6 +6,7 @@ from pyparsing import (
     Forward,
     Keyword,
     MatchFirst,
+    Optional,
     Regex,
     restOfLine,
     ZeroOrMore,
@@ -15,6 +16,7 @@ def _prepare_parser():
     number = Regex(r'-?\d+')
     local = Regex(r'%[A-Za-z0-9._]+')
     glob = Regex(r'@[A-Za-z0-9._]+')
+    meta = Regex(r'![A-Za-z0-9._]+')
 
     keywords = lambda keywords: MatchFirst(Keyword(word) for word in keywords.split())
 
@@ -31,7 +33,16 @@ def _prepare_parser():
 
     type_def = local + '=' + Keyword('type') - struct_type
 
-    definition = unused_def | type_def
+    value = number | keywords('zeroinitializer null true false')
+
+    linkage = Optional(keywords('private external internal common'), 'external')
+    align = Optional(',' + Keyword('align') - number)
+    metas = delimitedList(meta + meta) | Empty()
+    global_tag = keywords('global constant')
+    initializer = Optional(value, default='undef')
+    global_def = glob - '=' - linkage - global_tag - type_ - initializer - align - metas
+
+    definition = unused_def | type_def | global_def
     llvm = ZeroOrMore(definition)
 
     comment = ';' + restOfLine
