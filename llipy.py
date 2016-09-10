@@ -39,4 +39,4 @@ def _prepare_parser():
 
     return llvm
 
-parser = _prepare_parser()
+PARSER = _prepare_parser()
