@@ -12,14 +12,17 @@ from pyparsing import (
     ZeroOrMore,
 )
 
+def keywords(keywords):
+    return MatchFirst(Keyword(word) for word in keywords.split())
+
+def seplist(entry):
+    return delimitedList(entry) | Empty()
+
 def _prepare_parser():
     number = Regex(r'-?\d+')
     local = Regex(r'%[A-Za-z0-9._]+')
     glob = Regex(r'@[A-Za-z0-9._]+')
     meta = Regex(r'![A-Za-z0-9._]+')
-
-    keywords = lambda keywords: MatchFirst(Keyword(word) for word in keywords.split())
-    seplist = lambda entry: delimitedList(entry) | Empty()
 
     label = local + ':'
 
