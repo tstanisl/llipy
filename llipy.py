@@ -13,9 +13,12 @@ from pyparsing import (
 )
 
 def keywords(keywords):
+    """Helper to quickly define a set of alternative Keywords.
+     Keywords are matched using MatchFirst."""
     return MatchFirst(Keyword(word) for word in keywords.split())
 
-def seplist(entry):
+def commalist(entry):
+    "Helper to define a comma separated list. The list can be empty."
     return delimitedList(entry) | Empty()
 
 def _prepare_parser():
