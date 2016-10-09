@@ -8,6 +8,7 @@ from pyparsing import (
     Keyword,
     MatchFirst,
     Regex,
+    QuotedString,
 )
 
 def kw_of(keywords):
@@ -26,4 +27,4 @@ class Node(metaclass=abc.ABCMeta):
         "Returns a PyParsing parser for given class"
 
 NUMBER = Regex(r'-?\d+').setParseAction(lambda tok: int(tok[0]))
-
+QSTR = QuotedString('"', escChar='\\')
