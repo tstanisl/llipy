@@ -25,6 +25,15 @@ class TestNUMBER(unittest.TestCase):
                  self.assertRaises(pyparsing.ParseException):
                 self.parser.parseString(val, True)
 
+class TestQSTR(unittest.TestCase):
+    parser = ll.QSTR
+    def test_pass(self):
+        values = ['', 'abc', ' 1 2 3 ', '\'']
+        for val in values:
+            with self.subTest(val=val):
+                vval = '"' + val + '"'
+                val0 = self.parser.parseString(vval, True)[0]
+                self.assertEqual(val0, val)
 
 if __name__ == '__main__':
     unittest.main()
