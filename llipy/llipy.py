@@ -10,7 +10,7 @@ from pyparsing import (
     Regex,
 )
 
-def keywords(keywords):
+def kw_of(keywords):
     """Helper to quickly define a set of alternative Keywords.
      Keywords are matched using MatchFirst."""
     return MatchFirst(Keyword(word) for word in keywords.split())
