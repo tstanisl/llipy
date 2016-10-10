@@ -63,18 +63,16 @@ class ScalarType(Type):
         return 0
 
     @classmethod
+    @cached
     def parser(cls):
-        types = {
-            'void': VOID,
-            'i1': INT1,
-            'i8': INT8,
-            'i16': INT16,
-            'i32': INT32,
-            'i64': INT64,
-        }
+        types = (('void', VOID),
+                 ('i1', INT1),
+                 ('i8', INT8),
+                 ('i16', INT16),
+                 ('i32', INT32),
+                 ('i64', INT64))
 
-        return MatchFirst(Keyword(key).setParseAction(lambda *_, val=val: val)
-                          for key, val in types.items())
+        return MatchFirst(kwobj(key, obj) for key, obj in types)
 
 VOID = ScalarType(0)
 INT1 = ScalarType(1)
