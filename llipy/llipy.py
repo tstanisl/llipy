@@ -59,7 +59,8 @@ class Type(Node):
             cls._parser = Forward()
             cls._parser <<= (
                 ScalarType.parser() |
-                ArrayType.parser()
+                ArrayType.parser() |
+                StructType.parser()
             )
         return cls._parser
 
