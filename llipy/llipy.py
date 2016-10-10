@@ -25,6 +25,11 @@ def commalist(entry):
     "Helper to define a comma separated list. The list can be empty."
     return delimitedList(entry) | Empty()
 
+def kwobj(key, obj):
+    "Creates a parser for given keyword that returns a given object"
+    helper = lambda s, l, t, ret=obj: ret
+    return Keyword(key).setParseAction(helper)
+
 NUMBER = Regex(r'-?\d+').setParseAction(lambda tok: int(tok[0]))
 QSTR = QuotedString('"', escChar='\\').setParseAction(lambda tok: tok[0])
 LOCAL = Regex(r'%[\w.]+').setParseAction(lambda tok: tok[0])
