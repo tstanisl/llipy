@@ -1,6 +1,7 @@
 "Parser for LLVM IR in human readable form (.ll) files."
 
 from abc import ABCMeta, abstractmethod, abstractclassmethod
+import functools
 
 from pyparsing import (
     delimitedList,
@@ -10,6 +11,10 @@ from pyparsing import (
     Regex,
     QuotedString,
 )
+
+def cached(fun):
+    "Caching decorator"
+    return functools.lru_cache()(fun)
 
 def kw_of(keywords):
     """Helper to quickly define a set of alternative Keywords.
