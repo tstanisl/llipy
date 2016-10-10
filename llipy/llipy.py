@@ -6,6 +6,7 @@ import functools
 from pyparsing import (
     delimitedList,
     Empty,
+    Forward,
     Keyword,
     MatchFirst,
     Regex,
@@ -50,8 +51,19 @@ class Type(Node):
     def offset(self, index):
         "Offset of indexed property property in bytes"
 
+    @classmethod
+    def parser(cls):
+        if not hasattr(cls, '_parser'):
+            cls._parser = Forward()
+            cls._parser <<= (
+                ScalarType.parser() |
+                ArrayType.parser()
+            )
+        return cls._parser
+
 class ScalarType(Type):
     "All types without any substructure. Covers void and integer types"
+
     def __init__(self, bits):
         self._bits = bits
 
@@ -80,3 +92,31 @@ INT8 = ScalarType(8)
 INT16 = ScalarType(16)
 INT32 = ScalarType(32)
 INT64 = ScalarType(64)
+
+class ArrayType(Type):
+    "Node dedicated to array types"
+    def __init__(self, slots, etype):
+        self._slots = slots
+        self._etype = etype
+
+    def __len__(self):
+        return self._slots * len(self._etype)
+
+    def offset(self, index):
+        assert 0 <= index < len(self)
+        return index * len(self._etype)
+
+    def slots(self):
+        "Number of available slots in the array"
+        return self._slots
+
+    def etype(self):
+        "Type of array entry"
+        return self._etype
+
+    @classmethod
+    @cached
+    def parser(cls):
+        ret = '[' - NUMBER - 'x' - Type.parser() + ']'
+        ret.setParseAction(lambda t: ArrayType(t[1], t[3]))
+        return ret
