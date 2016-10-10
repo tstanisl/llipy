@@ -24,7 +24,9 @@ def kw_of(keywords):
 
 def commalist(entry):
     "Helper to define a comma separated list. The list can be empty."
-    return delimitedList(entry) | Empty()
+    parser = delimitedList(entry) | Empty()
+    # parser.setParseAction(lambda *t: print(t))
+    return parser
 
 def kwobj(key, obj):
     "Creates a parser for given keyword that returns a given object"
