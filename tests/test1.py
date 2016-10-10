@@ -48,5 +48,22 @@ class TestArrayType(unittest.TestCase):
                 self.assertEqual(etype, petype)
                 self.assertEqual(dim, pdim)
 
+class TestStructType(unittest.TestCase):
+    parser = ll.StructType.parser()
+    def test(self):
+        tests = [
+            ('{}', (), 0),
+            ('{i1}', (ll.INT1,), 1),
+            ('{i8, i16}', (ll.INT8, ll.INT16), 3),
+        ]
+        for txt, etypes, size in tests:
+            with self.subTest(val=txt):
+                pval = self.parser.parseString(txt)[0]
+                self.assertTrue(isinstance(pval, ll.StructType))
+                self.assertEqual(pval.slots(), len(etypes))
+
+                for idx, etype in enumerate(etypes):
+                    self.assertEqual(pval.etype(idx), etype)
+
 if __name__ == '__main__':
     unittest.main()
