@@ -122,3 +122,30 @@ class ArrayType(Type):
         ret = '[' - NUMBER - 'x' - Type.parser() + ']'
         ret.setParseAction(lambda t: ArrayType(t[1], t[3]))
         return ret
+
+class StructType(Type):
+    "Compound type similat to C-struct"
+    def __init__(self, etypes):
+        self._etypes = etypes
+        self._size = sum(len(etype) for etype in etypes)
+
+    def __len__(self):
+        return self._size
+
+    @cached
+    def offset(self, index):
+        return sum(len(etype) for etype in self._etypes[:index])
+
+    def slots(self):
+        "Number of available slots in the array"
+        return len(self._etypes)
+
+    def etype(self, index):
+        "Type of entry of given index"
+        return self._etypes[index]
+
+    @classmethod
+    @cached
+    def parser(cls):
+        ret = '{' - commalist(Type.parser()) - '}'
+        return ret.setParseAction(lambda t: StructType(t[1:-1]))
