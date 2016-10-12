@@ -2,6 +2,7 @@
 
 from abc import ABCMeta, abstractmethod, abstractclassmethod
 import functools
+from itertools import accumulate
 
 from pyparsing import (
     delimitedList,
@@ -72,6 +73,11 @@ class Type(Node):
             cls._parser.setParseAction(cls._parser_tail)
         return cls._parser
 
+    def __eq__(self, other):
+        if not isinstance(other, Type):
+            return NotImplemented
+        return self is other
+
 class ScalarType(Type):
     "All types without any substructure. Covers void and integer types"
 
@@ -141,24 +147,29 @@ class ArrayType(CompoundType):
         ret.setParseAction(lambda t: ArrayType(t[1], t[3]))
         return ret
 
+    def __eq__(self, other):
+        if not isinstance(other, ArrayType):
+            return False
+        return self.slots() == other.slots() and self.etype() == other.etype()
+
 class StructType(CompoundType):
     "Compound type similat to C-struct"
     def __init__(self, etypes):
-        self._etypes = etypes
-        self._size = sum(len(etype) for etype in etypes)
+        self.etypes = etypes
+        self._offsets = (0,)
+        self._offsets += tuple(accumulate(len(etype) for etype in etypes))
 
     def __len__(self):
-        return self._size
+        return self._offsets[-1]
 
-    @cached
     def offset(self, index):
-        return sum(len(etype) for etype in self._etypes[:index])
+        return self._offsets[index]
 
     def slots(self):
-        return len(self._etypes)
+        return len(self.etypes)
 
     def etype(self, index):
-        return self._etypes[index]
+        return self.etypes[index]
 
     @classmethod
     @cached
@@ -166,10 +177,15 @@ class StructType(CompoundType):
         ret = '{' - commalist(Type.parser()) - '}'
         return ret.setParseAction(lambda t: StructType(t[1:-1]))
 
+    def __eq__(self, other):
+        if not isinstance(other, StructType):
+            return False
+        return self.etypes == other.etypes
+
 class PointerType(Type):
     "Pointer types."
     def __init__(self, pointee):
-        self._pointee = pointee
+        self.pointee = pointee
 
     def __len__(self):
         return 4
@@ -177,3 +193,8 @@ class PointerType(Type):
     @classmethod
     def parser(cls):
         raise NotImplementedError
+
+    def __eq__(self, other):
+        if not isinstance(other, PointerType):
+            return False
+        return self.pointee == other.pointee
