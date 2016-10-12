@@ -6,6 +6,7 @@ import pyparsing
 
 from llipy.llipy import (
     Array,
+    Function,
     INT1, INT8, INT16, INT32, INT64,
     Pointer,
     Scalar,
@@ -36,12 +37,19 @@ class TestType(unittest.TestCase):
             ('[1 x [2 x [3 x i64]]]', Array(1, Array(2, Array(3, INT64))), 48),
             ('{i8}*', Pointer(Struct(INT8)), 4),
             ('[2 x i1]*', Pointer(Array(2, INT1)), 4),
+            ('i1 (i1)', Function(INT1, INT1), None),
+            ('i1 ()', Function(INT1), None),
+            ('void (i8, ...)', Function(VOID, INT8, variadic=True), None),
+            ('void (...)', Function(VOID, variadic=True), None),
+            ('void (i8, i16)*', Pointer(Function(VOID, INT8, INT16)), None),
+            ('void ()*()', Function(Pointer(Function(VOID))), None),
         ]
         for txt, type_, size in tests:
             with self.subTest(val=txt):
                 pval = self.parser.parseString(txt)[0]
                 self.assertEqual(pval, type_)
-                self.assertEqual(len(pval), size)
+                if size is not None:
+                    self.assertEqual(len(pval), size)
 
 if __name__ == '__main__':
     unittest.main()
