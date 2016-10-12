@@ -49,10 +49,6 @@ class Type(Node):
     def __len__(self):
         "Size of object in bytes"
 
-    @abstractmethod
-    def offset(self, index):
-        "Offset of indexed property property in bytes"
-
     @classmethod
     def parser(cls):
         if not hasattr(cls, '_parser'):
@@ -73,10 +69,6 @@ class ScalarType(Type):
     def __len__(self):
         return (self._bits + 7) // 8
 
-    def offset(self, index):
-        assert index == 0
-        return 0
-
     @classmethod
     @cached
     def parser(cls):
@@ -96,7 +88,22 @@ INT16 = ScalarType(16)
 INT32 = ScalarType(32)
 INT64 = ScalarType(64)
 
-class ArrayType(Type):
+class CompoundType(Type):
+    "Abstract class for compund types"
+
+    @abstractmethod
+    def offset(self, index):
+        "Offset of indexed property property in bytes"
+
+    @abstractmethod
+    def slots(self):
+        "Number of slots in the compound"
+
+    @abstractmethod
+    def etype(self, index):
+        "Type of element at given index"
+
+class ArrayType(CompoundType):
     "Node dedicated to array types"
     def __init__(self, slots, etype):
         self._slots = slots
@@ -110,11 +117,9 @@ class ArrayType(Type):
         return index * len(self._etype)
 
     def slots(self):
-        "Number of available slots in the array"
         return self._slots
 
-    def etype(self):
-        "Type of array entry"
+    def etype(self, index=0):
         return self._etype
 
     @classmethod
@@ -124,7 +129,7 @@ class ArrayType(Type):
         ret.setParseAction(lambda t: ArrayType(t[1], t[3]))
         return ret
 
-class StructType(Type):
+class StructType(CompoundType):
     "Compound type similat to C-struct"
     def __init__(self, etypes):
         self._etypes = etypes
@@ -138,11 +143,9 @@ class StructType(Type):
         return sum(len(etype) for etype in self._etypes[:index])
 
     def slots(self):
-        "Number of available slots in the array"
         return len(self._etypes)
 
     def etype(self, index):
-        "Type of entry of given index"
         return self._etypes[index]
 
     @classmethod
