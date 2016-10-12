@@ -246,3 +246,15 @@ class Function(Type):
         return self.ret_type == other.ret_type and \
                self.args == other.args and \
                self.variadic == other.variadic
+
+class Typedef(Node):
+    "Node with definition of the type"
+    def __init__(self, name, type_):
+        self.name = name
+        self.type_ = type_
+
+    @classmethod
+    def parser(cls):
+        opaque = kwobj('opaque', VOID)
+        ret = LOCAL - '=' - Keyword('type') - (opaque | Type.parser())
+        return ret.setParseAction(lambda t: Typedef(t[0], t[3]))
