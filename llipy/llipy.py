@@ -154,7 +154,7 @@ class ArrayType(CompoundType):
 
 class StructType(CompoundType):
     "Compound type similat to C-struct"
-    def __init__(self, etypes):
+    def __init__(self, *etypes):
         self.etypes = etypes
         self._offsets = (0,)
         self._offsets += tuple(accumulate(len(etype) for etype in etypes))
@@ -175,7 +175,7 @@ class StructType(CompoundType):
     @cached
     def parser(cls):
         ret = '{' - commalist(Type.parser()) - '}'
-        return ret.setParseAction(lambda t: StructType(t[1:-1]))
+        return ret.setParseAction(lambda t: StructType(*t[1:-1]))
 
     def __eq__(self, other):
         if not isinstance(other, StructType):
