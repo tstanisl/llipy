@@ -10,8 +10,10 @@ from pyparsing import (
     Forward,
     Keyword,
     MatchFirst,
+    Optional,
     Regex,
     QuotedString,
+    Suppress,
     ZeroOrMore,
 )
 
@@ -55,21 +57,27 @@ class Type(Node):
     def _parser_tail(toks):
         "Post processing of tail type"
         #print('tail:', toks[1:])
+        # pylint: disable=redefined-variable-type
         ret = toks[0]
         for tok in toks[1:]:
             if tok == '*':
                 ret = Pointer(ret)
+            else:
+                assert isinstance(tok, ArgumentTypes)
+                ret = Function(ret, *tok.args, variadic=tok.variadic)
+        # pylint: enable=redefined-variable-type
         return ret
 
     @classmethod
     def parser(cls):
         if not hasattr(cls, '_parser'):
             cls._parser = Forward()
+            func_or_ptr = '*' | ArgumentTypes.parser()
             cls._parser <<= (
                 Scalar.parser() |
                 Array.parser() |
                 Struct.parser()
-            ) + ZeroOrMore('*')
+            ) + ZeroOrMore(func_or_ptr)
             cls._parser.setParseAction(cls._parser_tail)
         return cls._parser
 
@@ -198,3 +206,43 @@ class Pointer(Type):
         if not isinstance(other, Pointer):
             return False
         return self.pointee == other.pointee
+
+class ArgumentTypes(Node):
+    "Helper class for list of argument types"
+    def __init__(self, *args):
+        #print('ArgumentTypes:', args)
+        if args and args[-1] == '...':
+            self.variadic = True
+            self.args = args[:-1]
+        else:
+            self.variadic = False
+            self.args = args
+
+    @classmethod
+    def parser(cls):
+        args = commalist(Type.parser()) - Optional(Suppress(',') + '...')
+        ret = '(' - ('...' | args) - ')'
+        return ret.setParseAction(lambda t: ArgumentTypes(*t[1:-1]))
+
+class Function(Type):
+    "Type of Function as value, defined by its arguments and return value"
+    def __init__(self, ret_type, *args, variadic=False):
+        #print('Function:', ret_type, args, variadic)
+        self.ret_type = ret_type
+        self.args = args
+        self.variadic = variadic
+
+    def __len__(self):
+        # Size of function is undefined, thus raising exception
+        raise ValueError
+
+    @classmethod
+    def parser(cls):
+        raise NotImplementedError
+
+    def __eq__(self, other):
+        if not isinstance(other, Function):
+            return False
+        return self.ret_type == other.ret_type and \
+               self.args == other.args and \
+               self.variadic == other.variadic
