@@ -11,6 +11,7 @@ from pyparsing import (
     MatchFirst,
     Regex,
     QuotedString,
+    ZeroOrMore,
 )
 
 def cached(fun):
@@ -49,6 +50,16 @@ class Type(Node):
     def __len__(self):
         "Size of object in bytes"
 
+    @staticmethod
+    def _parser_tail(toks):
+        "Post processing of tail type"
+        #print('tail:', toks[1:])
+        ret = toks[0]
+        for tok in toks[1:]:
+            if tok == '*':
+                ret = PointerType(ret)
+        return ret
+
     @classmethod
     def parser(cls):
         if not hasattr(cls, '_parser'):
@@ -57,7 +68,8 @@ class Type(Node):
                 ScalarType.parser() |
                 ArrayType.parser() |
                 StructType.parser()
-            )
+            ) + ZeroOrMore('*')
+            cls._parser.setParseAction(cls._parser_tail)
         return cls._parser
 
 class ScalarType(Type):
@@ -153,3 +165,15 @@ class StructType(CompoundType):
     def parser(cls):
         ret = '{' - commalist(Type.parser()) - '}'
         return ret.setParseAction(lambda t: StructType(t[1:-1]))
+
+class PointerType(Type):
+    "Pointer types."
+    def __init__(self, pointee):
+        self._pointee = pointee
+
+    def __len__(self):
+        return 4
+
+    @classmethod
+    def parser(cls):
+        raise NotImplementedError
