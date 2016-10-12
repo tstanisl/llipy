@@ -58,7 +58,7 @@ class Type(Node):
         ret = toks[0]
         for tok in toks[1:]:
             if tok == '*':
-                ret = PointerType(ret)
+                ret = Pointer(ret)
         return ret
 
     @classmethod
@@ -66,9 +66,9 @@ class Type(Node):
         if not hasattr(cls, '_parser'):
             cls._parser = Forward()
             cls._parser <<= (
-                ScalarType.parser() |
-                ArrayType.parser() |
-                StructType.parser()
+                Scalar.parser() |
+                Array.parser() |
+                Struct.parser()
             ) + ZeroOrMore('*')
             cls._parser.setParseAction(cls._parser_tail)
         return cls._parser
@@ -78,7 +78,7 @@ class Type(Node):
             return NotImplemented
         return self is other
 
-class ScalarType(Type):
+class Scalar(Type):
     "All types without any substructure. Covers void and integer types"
 
     def __init__(self, bits):
@@ -99,14 +99,14 @@ class ScalarType(Type):
 
         return MatchFirst(kwobj(key, obj) for key, obj in types)
 
-VOID = ScalarType(0)
-INT1 = ScalarType(1)
-INT8 = ScalarType(8)
-INT16 = ScalarType(16)
-INT32 = ScalarType(32)
-INT64 = ScalarType(64)
+VOID = Scalar(0)
+INT1 = Scalar(1)
+INT8 = Scalar(8)
+INT16 = Scalar(16)
+INT32 = Scalar(32)
+INT64 = Scalar(64)
 
-class CompoundType(Type):
+class Compound(Type):
     "Abstract class for compund types"
 
     @abstractmethod
@@ -121,7 +121,7 @@ class CompoundType(Type):
     def etype(self, index):
         "Type of element at given index"
 
-class ArrayType(CompoundType):
+class Array(Compound):
     "Node dedicated to array types"
     def __init__(self, slots, etype):
         self._slots = slots
@@ -144,15 +144,15 @@ class ArrayType(CompoundType):
     @cached
     def parser(cls):
         ret = '[' - NUMBER - 'x' - Type.parser() + ']'
-        ret.setParseAction(lambda t: ArrayType(t[1], t[3]))
+        ret.setParseAction(lambda t: Array(t[1], t[3]))
         return ret
 
     def __eq__(self, other):
-        if not isinstance(other, ArrayType):
+        if not isinstance(other, Array):
             return False
         return self.slots() == other.slots() and self.etype() == other.etype()
 
-class StructType(CompoundType):
+class Struct(Compound):
     "Compound type similat to C-struct"
     def __init__(self, *etypes):
         self.etypes = etypes
@@ -175,14 +175,14 @@ class StructType(CompoundType):
     @cached
     def parser(cls):
         ret = '{' - commalist(Type.parser()) - '}'
-        return ret.setParseAction(lambda t: StructType(*t[1:-1]))
+        return ret.setParseAction(lambda t: Struct(*t[1:-1]))
 
     def __eq__(self, other):
-        if not isinstance(other, StructType):
+        if not isinstance(other, Struct):
             return False
         return self.etypes == other.etypes
 
-class PointerType(Type):
+class Pointer(Type):
     "Pointer types."
     def __init__(self, pointee):
         self.pointee = pointee
@@ -195,6 +195,6 @@ class PointerType(Type):
         raise NotImplementedError
 
     def __eq__(self, other):
-        if not isinstance(other, PointerType):
+        if not isinstance(other, Pointer):
             return False
         return self.pointee == other.pointee
