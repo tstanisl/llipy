@@ -12,6 +12,7 @@ from llipy.llipy import (
     Scalar,
     Struct,
     Type,
+    Typedef,
     VOID,
 )
 
@@ -50,6 +51,20 @@ class TestType(unittest.TestCase):
                 self.assertEqual(pval, type_)
                 if size is not None:
                     self.assertEqual(len(pval), size)
+
+class TestTypedef(unittest.TestCase):
+    parser = Typedef.parser()
+    def test(self):
+        tests = [
+            ('%x = type {}', '%x', Struct()),
+            ('%y = type {i1, i8}', '%y', Struct(INT1, INT8)),
+            ('%z = type opaque', '%z', VOID),
+        ]
+        for txt, name, type_ in tests:
+            with self.subTest(val=txt):
+                pval = self.parser.parseString(txt)[0]
+                self.assertEqual(pval.type_, type_)
+                self.assertEqual(pval.name, name)
 
 if __name__ == '__main__':
     unittest.main()
