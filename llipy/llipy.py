@@ -38,8 +38,8 @@ def kwobj(key, obj):
     return Keyword(key).setParseAction(helper)
 
 NUMBER = Regex(r'-?\d+').setParseAction(lambda tok: int(tok[0]))
-QSTR = QuotedString('"', escChar='\\').setParseAction(lambda tok: tok[0])
-LOCAL = Regex(r'%[\w.]+').setParseAction(lambda tok: tok[0])
+QSTR = QuotedString('"', escChar='\\')
+LOCAL = Regex(r'%[\w.]+')
 
 class Node(metaclass=ABCMeta):
     "Base class for all llipy nodes"
