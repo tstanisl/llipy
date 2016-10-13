@@ -21,10 +21,11 @@ def cached(fun):
     "Caching decorator"
     return functools.lru_cache()(fun)
 
-def kw_of(keywords):
+def kwsof(keywords, default=None):
     """Helper to quickly define a set of alternative Keywords.
      Keywords are matched using MatchFirst."""
-    return MatchFirst(Keyword(word) for word in keywords.split())
+    ret = MatchFirst(Keyword(word) for word in keywords.split())
+    return ret if default is None else Optional(ret, default)
 
 def commalist(entry):
     "Helper to define a comma separated list. The list can be empty."
