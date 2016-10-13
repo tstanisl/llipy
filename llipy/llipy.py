@@ -259,3 +259,9 @@ class Typedef(Node):
         opaque = kwobj('opaque', VOID)
         ret = LOCAL - '=' - Keyword('type') - (opaque | Type.parser())
         return ret.setParseAction(lambda t: Typedef(t[0], t[3]))
+
+class Constant(Node):
+    "Abstraction for values"
+    @classmethod
+    def parser(cls):
+        return NUMBER
