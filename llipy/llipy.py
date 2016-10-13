@@ -265,3 +265,34 @@ class Constant(Node):
     @classmethod
     def parser(cls):
         return NUMBER
+
+GLOBAL = Regex(r'@[\w.]+')
+META = Regex(r'![\w.]+')
+LINKAGE = kwsof('private internal linkonce weak common external', 'common')
+VISIBILITY = kwsof('default hidden protected', 'default')
+ADDR_ATTR = kwsof('unnamed_addr local_unnamed_addr', '')
+
+UNDEF = object()
+ZEROINIT = object()
+
+METADATA = Suppress(ZeroOrMore(',' + META - META))
+ALIGN = Suppress(Optional(',' + Keyword('align') - NUMBER))
+
+class GlobalDef(Node):
+    "Definition of a global variable or constant"
+    def __init__(self, name, type_, value):
+        # NOTE: value may be zeroinitalized or undefined => type_ is required
+        self.name = name
+        self.type = type_
+        self.value = value
+
+    @classmethod
+    def parser(cls):
+        initializer = Optional(kwobj('zeroinitializer', ZEROINIT) | \
+                               kwobj('null', ZEROINIT) | Constant.parser(),
+                               UNDEF)
+
+        ret = GLOBAL - '=' - LINKAGE - VISIBILITY - ADDR_ATTR - \
+              kwsof('global constant') - Type.parser() - initializer - \
+              ALIGN - METADATA
+        return ret.setParseAction(lambda t: GlobalDef(t[0], t[6], t[7]))
