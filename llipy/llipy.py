@@ -256,7 +256,7 @@ class Typedef(Node):
 
     @classmethod
     def parser(cls):
-        opaque = kwobj('opaque', VOID)
+        opaque = kwobj('opaque', UNDEF)
         ret = LOCAL - '=' - Keyword('type') - (opaque | Type.parser())
         return ret.setParseAction(lambda t: Typedef(t[0], t[3]))
 

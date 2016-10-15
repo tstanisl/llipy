@@ -13,6 +13,7 @@ from llipy.llipy import (
     Struct,
     Type,
     Typedef,
+    UNDEF,
     VOID,
 )
 
@@ -58,7 +59,7 @@ class TestTypedef(unittest.TestCase):
         tests = [
             ('%x = type {}', '%x', Struct()),
             ('%y = type {i1, i8}', '%y', Struct(INT1, INT8)),
-            ('%z = type opaque', '%z', VOID),
+            ('%z = type opaque', '%z', UNDEF),
         ]
         for txt, name, type_ in tests:
             with self.subTest(val=txt):
