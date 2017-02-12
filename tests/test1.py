@@ -6,6 +6,7 @@ import pyparsing
 
 from llipy.llipy import (
     Array,
+    Deferred,
     Function,
     INT1, INT8, INT16, INT32, INT64,
     Pointer,
@@ -45,6 +46,7 @@ class TestType(unittest.TestCase):
             ('void (...)', Function(VOID, variadic=True), None),
             ('void (i8, i16)*', Pointer(Function(VOID, INT8, INT16)), None),
             ('void ()*()', Function(Pointer(Function(VOID))), None),
+            ('%x', Deferred('%x'), None),
         ]
         for txt, type_, size in tests:
             with self.subTest(val=txt):
