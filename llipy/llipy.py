@@ -75,6 +75,7 @@ class Type(Node):
             cls._parser = Forward()
             func_or_ptr = '*' | ArgumentTypes.parser()
             cls._parser <<= (
+                Deferred.parser() |
                 Scalar.parser() |
                 Array.parser() |
                 Struct.parser()
@@ -247,6 +248,25 @@ class Function(Type):
         return self.ret_type == other.ret_type and \
                self.args == other.args and \
                self.variadic == other.variadic
+
+class Deferred(Type):
+    """Types referenced by name. Instances of deferred types shall be
+       replaced by types it references to values of Typedef"""
+    def __init__(self, refname):
+        self.refname = refname
+
+    @classmethod
+    def parser(cls):
+        return LOCAL.copy().setParseAction(lambda t: Deferred(t[0]))
+
+    def __len__(self):
+        # Size of function is undefined, thus raising exception
+        raise ValueError
+
+    def __eq__(self, other):
+        if not isinstance(other, Deferred):
+            return False
+        return self.refname == other.refname
 
 class Typedef(Node):
     "Node with definition of the type"
