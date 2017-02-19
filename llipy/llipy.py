@@ -291,6 +291,7 @@ META = Regex(r'![\w.]+')
 LINKAGE = kwsof('private internal linkonce weak common external', 'common')
 VISIBILITY = kwsof('default hidden protected', 'default')
 ADDR_ATTR = kwsof('unnamed_addr local_unnamed_addr', '')
+FUNC_ATTRS = Group(ZeroOrMore(Regex(r'#\d+')))
 
 UNDEF = object()
 ZEROINIT = object()
@@ -316,3 +317,29 @@ class GlobalDef(Node):
               kwsof('global constant') - Type.parser() - initializer - \
               ALIGN - METADATA
         return ret.setParseAction(lambda t: GlobalDef(t[0], t[6], t[7]))
+
+PARAM_ATTR = kwsof('zeroext signext inreg byval inalloca sret noalias nocapture')
+
+class Define(Node):
+    "Function instance"
+    def __init__(self, name, rettype, args):
+        pass
+
+    @classmethod
+    def parser(cls):
+        arg = Type.parser() + Suppress(Group(PARAM_ATTR)) + LOCAL
+        args = commalist(arg) - Optional(Suppress(',') + '...')
+        ret = Keyword('define') - LINKAGE - VISIBILITY - Type.parser() -\
+              GLOBAL - '(' - args - ')' - Suppress(FUNC_ATTRS) - '{' - \
+              ZeroOrMore(Block.parser()) - '}'
+        return ret
+ 
+class Block(Node):
+    "Code block, sequence of instructions followed by jump/exit operation"
+    pass
+
+class Instruction(Node):
+    "Abstract class for LLVM Instructions"
+    @abstractmethod
+    def result(self):
+        "Returns name of variable with value of instructions"
